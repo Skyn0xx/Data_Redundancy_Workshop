@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>E-Commerce Test</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+  <div class="container">
+    <h1 class="mt-3">E-Commerce API Tester</h1>
+
+    <h2 class="mt-4">User</h2>
+    <input type="number" id="userId" placeholder="User ID" class="form-control mb-2">
+
+    <h2 class="mt-4">Products</h2>
+    <button class="btn btn-primary" onclick="fetchProducts()">Load Products</button>
+    <div id="products-list" class="mt-3"></div>
+
+    <h2 class="mt-4">Cart</h2>
+    <button class="btn btn-success" onclick="fetchCart()">View Cart</button>
+    <div id="cart-list" class="mt-3"></div>
+
+    <h2 class="mt-4">Order</h2>
+    <button class="btn btn-danger" onclick="placeOrder()">Place Order</button>
+  </div>
+
+  <script>
+    const apiUrl = "http://localhost:3000";
+
+    async function fetchProducts() {
+      const response = await fetch(`${apiUrl}/products`);
+      const products = await response.json();
+      const productsList = document.getElementById("products-list");
+      productsList.innerHTML = '';
+
+      products.forEach(product => {
+        const productCard = document.createElement("div");
+        productCard.classList.add("card", "p-3", "mt-2");
+
+        productCard.innerHTML = `
+          <h5>${product.name} - $${product.price}</h5>
+          <p>${product.description}</p>
+          <button class="btn btn-warning" onclick="addToCart(${product.id}, '${product.name}')">
+            Ajouter le produit ${product.name}
+          </button>
+        `;
+
+        productsList.appendChild(productCard);
+      });
+    }
+
+    async function fetchCart() {
+      const userId = document.getElementById("userId").value;
+      if (!userId) return alert("Enter a User ID");
+
+      const response = await fetch(`${apiUrl}/cart/${userId}`);
+      if (!response.ok) return alert("Cart not found");
+
+      const cart = await response.json();
+      const cartList = document.getElementById("cart-list");
+      cartList.innerHTML = cart.products.map(p => `
+        <p>Product ID: ${p.id} | Quantity: ${p.quantity}</p>
+      `).join('');
+    }
+
+    async function addToCart(productId, productName) {
+      const userId = document.getElementById("userId").value;
+      if (!userId) return alert("Enter a User ID");
+
+      const response = await fetch(`${apiUrl}/cart/${userId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: productId, quantity: 1 })
+      });
+
+      if (response.ok) alert(`Le produit ${productName} a été ajouté au panier!`);
+      else alert("Failed to add product.");
+    }
+
+    async function placeOrder() {
+      const userId = document.getElementById("userId").value;
+      if (!userId) return alert("Enter a User ID");
+
+      const cartResponse = await fetch(`${apiUrl}/cart/${userId}`);
+      if (!cartResponse.ok) return alert("Cart not found");
+
+      const cart = await cartResponse.json();
+      if (!cart.products || !cart.products.length) return alert("Your cart is empty!");
+
+      const orderResponse = await fetch(`${apiUrl}/orders`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id: userId, products: cart.products })
+      });
+
+      if (!orderResponse.ok) return alert("Failed to place order.");
+
+      const deleteCartResponse = await fetch(`${apiUrl}/cart/${userId}`, {
+        method: "DELETE"
+      });
+
+      if (deleteCartResponse.ok) {
+        alert("Order placed successfully! Your cart has been cleared.");
+        document.getElementById("cart-list").innerHTML = "";
+      } else {
+        alert("Order placed, but failed to clear cart.");
+      }
+    }
+  </script>
+</body>
+</html>

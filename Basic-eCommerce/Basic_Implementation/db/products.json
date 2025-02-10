@@ -1,0 +1,19 @@
+[
+    {
+      "id": 1,
+      "name": "Laptop",
+      "description": "MacBook Pro",
+      "price": 1500,
+      "category": "Electronics",
+      "in_stock": true
+    },
+    {
+      "id": 2,
+      "name": "Phone",
+      "description": "Iphone 16",
+      "price": 1000,
+      "category": "Electronics",
+      "in_stock": true
+    }
+]
+  
